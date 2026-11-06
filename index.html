@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>台北府城隍廟 神職島</title>
+<meta name="description" content="用 3D 互動小島認識台北府城隍廟：城隍爺、八司、范謝將軍、虎爺等神明各管什麼、能拜什麼，以及官方 5 爐參拜路線。">
+<meta property="og:title" content="台北府城隍廟 神職島">
+<meta property="og:description" content="點 Q 版神明，看城隍府裡誰負責什麼、遇到什麼事該找誰。">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#10162a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%2310162a%22/%3E%3Cpath%20d%3D%22M14%2038%20Q32%2014%2050%2038Z%22%20fill%3D%22%23c8402e%22/%3E%3Crect%20x%3D%2220%22%20y%3D%2238%22%20width%3D%2224%22%20height%3D%2214%22%20fill%3D%22%23a5301e%22/%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2222%22%20r%3D%223%22%20fill%3D%22%23e0b24a%22/%3E%3C/svg%3E">
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap">
+<style>
+/* Layout: full-bleed 3D island at night with chibi deity standees; title top-left; guide panel right (bottom sheet on phones).
+   Deliberately single-theme: a lantern-lit night scene reads the same on any host theme. */
+:root{
+  --night:#10162a; --panel:rgba(15,20,37,.92); --line:rgba(239,230,210,.14); --soft:rgba(239,230,210,.06);
+  --paper:#efe6d2; --muted:#a9a395; --vermilion:#c8402e; --gold:#e0b24a;
+  --f-display:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--night);color:var(--paper);font-family:var(--f-body);overflow:hidden;line-height:1.6}
+#stage{position:fixed;inset:0}
+#stage canvas{display:block;outline:none}
+#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.tag{position:absolute;left:0;top:0;pointer-events:auto;display:flex;align-items:center;gap:6px;
+  font:500 12px/1 var(--f-body);color:var(--paper);white-space:nowrap;cursor:pointer;
+  padding:5px 9px;border-radius:999px;background:rgba(15,20,37,.8);border:1px solid var(--line);
+  transition:opacity .25s, border-color .25s, background .25s}
+.tag i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+.tag.on{border-color:var(--c);background:rgba(15,20,37,.96)}
+.tag.dim{opacity:.18}
+.tag.off{visibility:hidden}
+
+header.hero{position:fixed;z-index:2;top:calc(env(safe-area-inset-top,0px) + 18px);
+  left:max(18px, env(safe-area-inset-left,0px));max-width:min(440px, calc(100% - 440px));pointer-events:none}
+.eyebrow{font-size:12px;letter-spacing:.18em;color:var(--gold);margin:0 0 6px}
+h1{font-family:var(--f-display);font-weight:900;font-size:clamp(26px,3.4vw,40px);line-height:1.15;margin:0;text-wrap:balance;
+  text-shadow:0 2px 18px rgba(0,0,0,.5)}
+h1 span{color:var(--vermilion)}
+.lede{color:var(--muted);font-size:14px;margin:10px 0 0;max-width:38ch}
+.hint{font-size:12px;color:var(--muted);margin:8px 0 0;opacity:.8}
+
+aside.panel{position:fixed;z-index:3;top:calc(env(safe-area-inset-top,0px) + 16px);
+  right:max(16px, env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 16px);
+  width:390px;overflow-y:auto;overscroll-behavior:contain;background:var(--panel);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:14px;
+  padding:18px;display:flex;flex-direction:column;gap:18px}
+
+#card{display:flex;flex-direction:column;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.card-head{display:flex;gap:14px;align-items:center}
+.avatar{flex:0 0 92px;width:92px;height:112px;border-radius:14px;
+  background:radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--c) 38%, transparent), transparent 70%), var(--soft);
+  display:grid;place-items:center}
+.avatar svg{width:88px;height:110px;display:block}
+.card-id{min-width:0;display:flex;flex-direction:column;gap:4px}
+.card-top{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.pill{font-size:12px;font-weight:700;letter-spacing:.06em;padding:2px 9px;border-radius:999px;color:#141a2c;background:var(--c)}
+.loc{font-size:12px;color:var(--muted)}
+#c-name{font-family:var(--f-display);font-weight:900;font-size:28px;line-height:1.2;margin:0}
+.alias{margin:0;color:var(--muted);font-size:13px}
+#c-duty{margin:0;font-size:15px}
+.sub{font-size:12px;letter-spacing:.14em;color:var(--c);margin:0 0 8px;font-weight:700}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.tags li{font-size:13px;padding:4px 10px;border-radius:8px;background:color-mix(in srgb, var(--c) 16%, transparent);
+  border:1px solid color-mix(in srgb, var(--c) 45%, transparent)}
+.cases{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.cases li{position:relative;font-size:14px;padding:9px 12px 9px 34px;border-radius:10px;background:var(--soft)}
+.cases li::before{content:"例";position:absolute;left:10px;top:10px;width:17px;height:17px;border-radius:5px;
+  font-size:11px;font-weight:700;line-height:17px;text-align:center;color:#141a2c;background:var(--c)}
+.tip{margin:0;font-size:13px;color:var(--muted);padding-left:12px;border-left:2px solid var(--c)}
+.analog{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0;padding:10px 12px;border-radius:10px;
+  background:var(--soft);font-size:14px}
+.analog dt{color:var(--muted);font-size:12px;letter-spacing:.08em;padding-top:2px}
+.analog dd{margin:0;font-weight:700}
+#route-nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+#route-step{flex:1 1 100%;font-size:13px;color:var(--gold)}
+
+.sec-title{font-size:12px;letter-spacing:.16em;color:var(--muted);margin:0 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;color:inherit}
+.chip,.btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:6px 11px;border-radius:999px;
+  background:transparent;border:1px solid var(--line);cursor:pointer;transition:background .2s,border-color .2s}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.chip[aria-pressed="true"]{background:rgba(239,230,210,.12);border-color:var(--c, var(--paper))}
+.chip:hover,.btn:hover{background:rgba(239,230,210,.08)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:var(--vermilion);border-color:var(--vermilion);color:#fff6ea;font-weight:700}
+.btn.primary:hover{background:#d84b38}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+#list{display:grid;gap:4px;margin:0;padding:0;list-style:none}
+#list button{width:100%;display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px;text-align:left;
+  padding:4px 10px 4px 4px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer}
+#list .mini{width:36px;height:42px;border-radius:8px;background:color-mix(in srgb, var(--c) 20%, transparent);display:grid;place-items:center}
+#list .mini svg{width:34px;height:42px;display:block}
+#list button b{font-weight:700;font-size:14px}
+#list button small{color:var(--muted);font-size:12px;text-align:right}
+#list button:hover{background:rgba(239,230,210,.06)}
+#list button[aria-current="true"]{border-color:var(--c);background:rgba(239,230,210,.08)}
+#list li[hidden]{display:none}
+.subs{display:grid;gap:6px}
+.subs details{border-radius:10px;background:var(--soft);border:1px solid transparent}
+.subs details[open]{border-color:color-mix(in srgb, var(--c) 55%, transparent);background:rgba(239,230,210,.09)}
+.subs summary{list-style:none;display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:4px 10px 4px 4px;cursor:pointer}
+.subs summary::-webkit-details-marker{display:none}
+.subs summary .mini{width:34px;height:42px;border-radius:8px;background:color-mix(in srgb, var(--c) 20%, transparent);display:grid;place-items:center}
+.subs summary .mini svg{width:32px;height:40px;display:block}
+.subs summary b{font-size:14px}
+.subs summary small{display:block;color:var(--muted);font-size:12px;line-height:1.4}
+.subs summary::after{content:"＋";color:var(--muted);font-size:13px}
+.subs details[open] summary::after{content:"－"}
+.sub-body{display:grid;gap:8px;padding:2px 12px 12px 48px;font-size:14px}
+.sub-body .tags li{font-size:12px;padding:3px 8px}
+.sub-body p{margin:0}
+.sub-body .k{color:var(--muted);font-size:12px;margin-right:6px}
+.tag.subtag{font-size:11px;padding:3px 7px}
+.bubble{position:absolute;left:0;top:0;pointer-events:none;font:700 11px/1.2 var(--f-body);color:#2b2027;white-space:nowrap;
+  padding:4px 8px;border-radius:10px;background:#fbf6ea;border:2px solid var(--c);box-shadow:0 3px 10px rgba(0,0,0,.35)}
+.bubble::after{content:"";position:absolute;left:50%;bottom:-6px;margin-left:-5px;border:5px solid transparent;border-top-color:var(--c);border-bottom:0}
+.bubble.off{visibility:hidden}
+.src{font-size:12px;color:var(--muted);margin:0}
+.src a{color:var(--paper)}
+
+@media (max-width:760px){
+  header.hero{max-width:none;right:max(16px, env(safe-area-inset-right,0px));left:max(16px, env(safe-area-inset-left,0px))}
+  h1{font-size:24px}
+  .lede{display:none}
+  aside.panel{top:auto;left:0;right:0;bottom:0;width:auto;max-height:52%;border-radius:16px 16px 0 0;border-bottom:0;
+    padding-block:14px calc(14px + env(safe-area-inset-bottom,0px));
+    padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+  .avatar{flex-basis:76px;width:76px;height:94px}
+  .avatar svg{width:72px;height:90px}
+  #c-name{font-size:24px}
+  .tag{font-size:11px;padding:4px 7px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div id="stage" aria-label="台北府城隍廟神職島 3D 模型，可拖曳旋轉、點擊 Q 版神明查看職能"></div>
+<div id="labels"></div>
+
+<header class="hero">
+  <p class="eyebrow">松山・虎林街 3 號</p>
+  <h1>台北府城隍廟<br><span>神職島</span></h1>
+  <p class="lede">清光緒七年（1881）由首任台北知府陳星聚創建，1924 年遷奉松山。點島上的 Q 版神明，看城隍府裡誰負責什麼、遇到什麼事該找誰。</p>
+  <p class="hint">拖曳旋轉・滾輪或雙指縮放・點神明看職能</p>
+</header>
+
+<aside class="panel" aria-label="神職導覽">
+  <article id="card" aria-live="polite">
+    <div class="card-head">
+      <div class="avatar" id="c-avatar"></div>
+      <div class="card-id">
+        <div class="card-top"><span class="pill" id="c-cat"></span><span class="loc" id="c-loc"></span></div>
+        <h2 id="c-name"></h2>
+        <p class="alias" id="c-alias"></p>
+      </div>
+    </div>
+    <p id="c-duty"></p>
+    <div id="c-subs-wrap" hidden><p class="sub">八司各自負責什麼（點開看）</p><div class="subs" id="c-subs"></div></div>
+    <div><p class="sub">可以來拜什麼</p><ul class="tags" id="c-pray"></ul></div>
+    <div><p class="sub">生活中遇到這些事</p><ul class="cases" id="c-cases"></ul></div>
+    <p class="tip" id="c-tip"></p>
+    <dl class="analog"><dt>陽間對照</dt><dd id="c-analog"></dd><dt>職掌</dt><dd id="c-role"></dd></dl>
+    <div id="route-nav" hidden>
+      <span id="route-step"></span>
+      <button class="btn" id="r-prev" type="button">← 上一爐</button>
+      <button class="btn" id="r-next" type="button">下一爐 →</button>
+      <button class="btn" id="r-end" type="button">結束導覽</button>
+    </div>
+  </article>
+
+  <section>
+    <p class="sec-title">神職分類</p>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <div class="tools">
+    <button class="btn primary" id="route-btn" type="button">走一遍參拜路線（5 爐）</button>
+    <button class="btn" id="overview" type="button">回到全景</button>
+    <button class="btn" id="walkers" type="button" aria-pressed="true">信徒走動：開</button>
+  </div>
+
+  <section>
+    <p class="sec-title">神祇一覽</p>
+    <ul id="list"></ul>
+  </section>
+
+  <p class="src">神祇職能與參拜順序依據<a href="https://www.bobe.org.tw/about.php" target="_blank" rel="noopener">台北府城隍廟官網</a>「神祇介紹」與「參拜路線」整理。「可以來拜什麼」與生活例子為民間常見說法，「陽間對照」為導覽用比喻；本站為非官方的教育導覽，實際祭拜方式以廟方說明為準，官司、健康等問題也請同時尋求專業協助。</p>
+</aside>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const CATS = {
+  law:     {name:'司法審判', color:'#e0b24a'},
+  enforce: {name:'執法緝拿', color:'#e8684d'},
+  guard:   {name:'守境護民', color:'#55bb92'},
+  aid:     {name:'輔政慈護', color:'#e295b8'},
+  upper:   {name:'二樓諸殿', color:'#97aef0'}
+};
+const D = [
+ {id:'chenghuang',name:'城隍爺',alias:'台北府城隍威靈公・道號「輔德大王威靈感應天尊」',cat:'law',a:0,R:3.2,big:true,
+  loc:'一樓正殿・第 1 爐（主爐）',role:'陰陽兩界的審判與治理',analog:'地方首長兼法院院長',
+  duty:'本廟主神，掌理轄區陰陽兩界，依善惡施以賞罰。正殿中央並坐三尊軟身城隍，分稱大祖、二祖、三祖。清代台北府城隍的轄區涵蓋新竹以北，連宜蘭全境都在內。',
+  pray:['官司糾紛','討回公道','遇到小人','祭解補運','收驚','地方平安'],
+  cases:['捲入合約或債務糾紛、準備上法院前，來向城隍爺稟明原委，祈求審理公正。','在職場被誣賴、有理說不清，請城隍爺明辨是非。','一陣子諸事不順、心神不寧，到廟裡請道長為自己祭解補運。'],
+  tip:'廟方有駐廟道長協助祭解、補運、收驚。官司問題仍請同時諮詢律師。',
+  look:{robe:'#8f1f1a',trim:'#e0b24a',hat:'wusha',beard:'long',mood:'calm',acc:'tablet'}},
+ {id:'panguan',name:'文武判官',alias:'文判官・武判官',cat:'law',a:25,R:4.6,
+  loc:'一樓正殿・侍立城隍兩側',role:'審案與執行',analog:'法官與執行官',
+  duty:'文判官審閱百姓的善惡紀錄，寫成判決書；武判官負責把判決落實，執行懲處。',
+  pray:['還自己清白','案件公正審理','文書契約順利'],
+  cases:['遭人誤會、被貼上不實標籤，祈求文判官把來龍去脈看清楚。','簽約、申訴、寫陳情書之前，祈求文書順利、條理分明。','調解或判決結果出爐，祈求後續執行順利、不再節外生枝。'],
+  tip:'文判拿筆寫判決，武判持劍執行，所以一文一武站在城隍左右。',
+  look:{pair:[{robe:'#2f6b4f',trim:'#e0b24a',hat:'scholar',beard:'short',mood:'calm',acc:'brush'},
+              {robe:'#7a2a20',trim:'#e0b24a',face:'#d6604a',hat:'helmet',beard:'big',mood:'fierce',acc:'sword'}]}},
+ {id:'basi',name:'八司',alias:'增祿・獎善・糾察・土地・陰陽・速報・罰惡・延壽',cat:'law',a:-100,R:4.0,
+  loc:'城隍麾下屬官',role:'分工辦理各項事務',analog:'市府各局處',
+  duty:'城隍麾下的八個「局處」，分管土地陰陽、糾察速報、獎善罰惡、增祿延壽等事務。廟方以「文武八司同參政」形容祂們與城隍共同治理。島上八司本尊身後的八位小司官，點了可以個別看。',
+  pray:['增福延壽','升遷加薪','善行被看見','冤屈速報'],
+  cases:['不確定該找哪一司時，先向城隍爺稟明，再到八司前把事情說清楚。','同一件事可能牽涉好幾司，例如被詐騙：罰惡司懲惡、速報司加急、糾察司揭發。','長輩生日或身體轉弱，為家人向延壽司祈求增福延壽。'],
+  tip:'八司名稱與排列依廟方神像：增祿、獎善、糾察、土地、陰陽、速報、罰惡、延壽。各司職掌為民間一般說法，廟方官網未逐一說明。',
+  look:{robe:'#2c4f8a',trim:'#e0b24a',hat:'wusha',beard:'short',mood:'calm',acc:'abacus'},
+  subs:[
+   {n:'增祿司',role:'掌管官祿與收入的增減',analog:'人事與薪資單位',pray:['升官加薪','求職順利','事業財祿'],ex:'準備面試新工作，或年底爭取升遷加薪，祈求祿位增長。',look:{robe:'#a2401f',trim:'#e0b24a',hat:'wusha',beard:'long',mood:'happy',acc:'ingot'}},
+   {n:'獎善司',role:'記錄並獎賞善行',analog:'表揚與獎勵單位',pray:['善有善報','行善功德','好人好事被看見'],ex:'長期當志工、默默捐款，向獎善司稟報，祈求善行化為家人的福報。',look:{robe:'#3f8a5a',trim:'#f3d27a',hat:'wusha',mood:'happy',acc:'medal'}},
+   {n:'糾察司',role:'巡查、糾舉違法失德的人事',analog:'監察與政風單位',pray:['揭發不公','弊端浮上檯面','防人陷害'],ex:'發現公司有人舞弊卻不敢聲張，祈求真相自然浮現、自己不受牽連。',look:{robe:'#2f4f6f',trim:'#e0b24a',hat:'wusha',beard:'short',mood:'fierce',acc:'lens'}},
+   {n:'土地司',role:'管理轄區土地、地界與營建',analog:'地政事務所',pray:['買房過戶','動土搬家','地界糾紛'],ex:'買房過戶、裝修動土或搬新家前，祈求土地司讓一切手續平順。',look:{robe:'#7a6230',trim:'#e0b24a',hat:'wusha',beard:'short',mood:'calm',acc:'scroll'}},
+   {n:'陰陽司',role:'統管陰陽兩界往來的文書案卷',analog:'秘書處兼戶政',pray:['亡者後事順利','陰陽兩界事務','家宅不寧'],ex:'家中長輩剛過世，祈求亡者在另一個世界的「手續」順利，也讓家人安心。',look:{robe:'#3c3f52',trim:'#f1ede4',hat:'wusha',beard:'short',mood:'calm',acc:'yinyang'}},
+   {n:'速報司',role:'把人間善惡即時呈報城隍',analog:'緊急通報中心',pray:['事情加速處理','冤屈快速上達','急事求援'],ex:'申訴或案子遲遲沒有回音，祈求速報司「加急」，讓事情盡快有結果。',look:{robe:'#c0592e',trim:'#f3d27a',hat:'wusha',mood:'happy',acc:'ji'}},
+   {n:'罰惡司',role:'依惡行輕重施以懲罰',analog:'懲處執行單位',pray:['惡人受到制裁','受害討公道','遠離壞人'],ex:'被詐騙或遭人惡意傷害，祈求加害者得到應有的懲罰。',look:{robe:'#5a2328',trim:'#e0b24a',face:'#d6604a',hat:'helmet',beard:'big',mood:'fierce',acc:'whip'}},
+   {n:'延壽司',role:'掌管壽數長短',analog:'衛生福利單位',pray:['長輩延壽','病中祈福','身體健康'],ex:'家中長輩住院或年事已高，為長輩祈求延年益壽、平安度過難關。',look:{robe:'#6f56a0',trim:'#f3d27a',hat:'roundcap',beard:'white',mood:'happy',acc:'peach'}}
+  ]},
+ {id:'fanxie',name:'范謝將軍',alias:'俗稱七爺、八爺',cat:'enforce',a:100,R:4.8,
+  loc:'城隍部將',role:'緝拿亡魂到案',analog:'司法警察',
+  duty:'專責捉拿亡魂到案，協助城隍賞善罰惡。高瘦的是七爺謝將軍，矮黑的是八爺范將軍。',
+  pray:['尋人尋物','討回欠款','夜裡不安寧','驅邪避煞'],
+  cases:['錢包、證件或寵物走失，請七爺八爺幫忙「找回來」。','借出去的錢遲遲討不回來，祈求對方良心發現、按時還款。','家裡或宿舍夜裡總覺得不安穩，祈求將軍巡查鎮守。'],
+  tip:'七爺高帽上常寫「一見大吉」，民間也有人特別向七爺祈求好運。',
+  look:{pair:[{robe:'#f1ede4',trim:'#9b968a',face:'#f7efe6',hat:'tall',mood:'tongue',acc:'fan'},
+              {robe:'#2a2a33',trim:'#e0b24a',face:'#3d3a46',hat:'square',mood:'fierce',acc:'chain'}]}},
+ {id:'zhongkui',name:'鍾馗神將',alias:'除妖降魔的神將',cat:'enforce',a:145,R:4.6,
+  loc:'城隍部將',role:'懲奸除惡',analog:'檢察官',
+  duty:'負責揪出奸邪、懲治惡行，並降伏妖魔。',
+  pray:['鎮宅驅邪','斬斷小人','擋掉爛桃花','新居入厝'],
+  cases:['剛搬新家或換辦公室，祈求鍾馗鎮宅，讓空間清淨安穩。','職場上總有人扯後腿、搬弄是非，祈求把小人擋在門外。','想斷開一段糾纏不清的關係，祈求快刀斬亂麻。'],
+  tip:'鍾馗長相兇猛，正是用來嚇退妖邪的「門面」。',
+  look:{robe:'#b2342a',trim:'#1d1b22',hat:'wusha',beard:'big',mood:'fierce',acc:'sword'}},
+ {id:'wuying',name:'五營元帥',alias:'東、南、西、北、中五營兵將',cat:'guard',a:180,R:4.6,
+  loc:'駐守廟境四方',role:'戍邊守境',analog:'駐地守備部隊',
+  duty:'駐守邊界，保衛台北府轄區居民的安全。島上的五面營旗代表五營駐地，依傳統以青、紅、白、黑、黃五色分屬東、南、西、北、中。',
+  pray:['出入平安','通勤行車平安','家宅安寧','社區平安'],
+  cases:['每天騎車、開車通勤，或家人要出遠門，祈求五營兵將一路護送。','住家附近最近不太平靜，祈求五營守住四方。','要辦大型活動、廟會繞境前，祈求現場秩序平安。'],
+  tip:'五營兵將是城隍的「駐軍」，平時守境，遶境時隨駕出巡。',
+  look:{robe:'#8a5a1c',trim:'#e0b24a',hat:'helmet',mood:'fierce',acc:'flag',armor:true}},
+ {id:'huye',name:'虎爺',alias:'城隍的坐騎',cat:'guard',a:-25,R:4.6,
+  loc:'一樓・神案下方',role:'鎮守與驅邪',analog:'地方保全兼兒童守護',
+  duty:'城隍的坐騎，鎮守廟宇與鄉里、驅逐邪魔，也特別守護孩童。',
+  pray:['小孩收驚','孩童平安長大','偏財與生意','驅邪'],
+  cases:['孩子夜裡哭鬧、受到驚嚇，帶來給虎爺收驚、求平安。','孩子剛上學或換環境，祈求虎爺陪伴守護。','做生意的人向「咬錢虎爺」祈求財源。'],
+  tip:'虎爺供在神案下方，參拜時記得蹲低一點跟祂打招呼。',
+  look:{tiger:true}},
+ {id:'fude',name:'福德正神',alias:'土地公・旁祀招財童子',cat:'guard',a:-145,R:4.6,
+  loc:'一樓側面・第 5 爐',role:'處理地方大小事',analog:'里長',
+  duty:'會同山神打理地方上的大小事務，是最貼近百姓日常的神明。',
+  pray:['求財','事業順利','做生意','家宅平安'],
+  cases:['準備開店、換工作或接新案子，祈求土地公保佑財源與人脈。','剛搬到松山一帶，先來向「在地里長」土地公報到。','工作不穩定、收入起伏大，祈求事業平順。'],
+  tip:'土地公旁的招財童子同屬第 5 爐，一起拜。',
+  look:{robe:'#a3332a',trim:'#e0b24a',hat:'roundcap',beard:'white',mood:'happy',acc:'ingot'}},
+ {id:'furen',name:'城隍夫人',alias:'府城隍夫人',cat:'aid',a:-60,R:3.6,
+  loc:'一樓正殿虎邊・第 1 爐（主爐）',role:'體恤民情',analog:'民情與社福窗口',
+  duty:'協助城隍體察民間疾苦，聽聞求助便施以救援。廟方記載夫人臉上留著長年香煙的痕跡，被信眾視為靈感的印記。',
+  pray:['家庭和睦','夫妻感情','女性的心事','請夫人說情'],
+  cases:['夫妻最近常吵架、溝通卡住，祈求夫人讓家裡回到和氣。','身為媽媽照顧全家壓力很大，有說不出口的心事想傾訴。','求了城隍爺之後，也請夫人在旁「多說幾句好話」。'],
+  tip:'民間常說夫人心軟，願意替信眾在城隍爺面前說情。',
+  look:{robe:'#d47a9c',trim:'#f3d27a',hat:'phoenix',mood:'gentle',acc:'none'}},
+ {id:'fuyou',name:'孚佑帝君',alias:'即呂洞賓',cat:'aid',a:60,R:3.6,
+  loc:'一樓正殿龍邊・第 1 爐（主爐）',role:'參謀輔佐',analog:'市府顧問',
+  duty:'以幕僚客卿的身分，參謀並輔佐城隍處理政務。',
+  pray:['做決定的智慧','事業規劃','修身養性','身心健康'],
+  cases:['面臨轉職、創業、要不要接 offer，祈求頭腦清楚、做對選擇。','工作卡關，想求點化、找到新方向。','想戒掉壞習慣，讓生活更有紀律。'],
+  tip:'民間有「情侶別一起拜呂洞賓」的傳說，當作趣聞聽聽就好。',
+  look:{robe:'#5d86b8',trim:'#f1ede4',hat:'daoist',beard:'short',mood:'calm',acc:'backsword'}},
+ {id:'wenchang',name:'文昌帝君',alias:'民國 94 年（2005）增祀',cat:'upper',pos:[-2.0,6.1,0.5],
+  loc:'二樓文昌殿・第 2 爐',role:'文運與學業',analog:'教育局',
+  duty:'主掌文運。本廟於民國 94 年增設文昌殿，信眾多在此祈求學業與考試順利。',
+  pray:['考試順利','升學','證照與國考','讀書專注'],
+  cases:['會考、學測或國考前，帶准考證影本來祈求金榜題名。','準備證照考試，總是讀不進去，祈求專心。','孩子剛入學、換學校，祈求學習順利。'],
+  tip:'常見供品有蔥（聰明）、芹菜（勤學）、菜頭（好彩頭）、粽子（包中）。',
+  look:{robe:'#2f7a6a',trim:'#e0b24a',hat:'scholar',beard:'long',mood:'calm',acc:'brush'}},
+ {id:'sanbao',name:'三寶佛祖',alias:'並祀觀音大士、地藏王菩薩',cat:'upper',pos:[0,6.6,0.5],
+  loc:'二樓中殿・第 3 爐',role:'佛門慈悲',analog:'心靈關懷',
+  duty:'二樓中殿供奉三寶佛祖，並祀觀音大士與地藏王菩薩。觀音聞聲救苦，地藏發願度化幽冥眾生，與城隍的陰間職掌互相呼應。',
+  pray:['心靈平安','病中祈福','超薦先人','化解煩憂'],
+  cases:['家人生病住院，來為家人祈求平安、早日康復。','親人過世，祈求地藏王菩薩引領亡者安息。','心裡煩悶、睡不好，到二樓靜靜禮佛，讓心安定下來。'],
+  tip:'禮佛以素果、鮮花供奉，不用葷食。',
+  look:{robe:'#f1ede4',trim:'#e0b24a',hat:'hood',halo:true,mood:'gentle',acc:'vase'}},
+ {id:'doumu',name:'斗姆元君',alias:'並祀值年太歲',cat:'upper',pos:[2.0,6.1,0.5],
+  loc:'二樓太歲殿・第 4 爐',role:'星辰與流年',analog:'年度值班長官',
+  duty:'斗姆元君被尊為眾星之母，殿內並祀當年輪值的太歲星君，信眾多來此安太歲、祈求一年平順。',
+  pray:['安太歲','點光明燈','流年平安','消災解厄'],
+  cases:['今年生肖逢值太歲或沖太歲，到太歲殿安太歲。','年初為全家點光明燈，祈求一整年順利。','經歷大病或意外後，祈求消災、轉換運勢。'],
+  tip:'廟方提供線上點燈報名，安太歲可留意年度活動公告。',
+  look:{robe:'#6a4fa0',trim:'#e0b24a',hat:'starcrown',halo:true,mood:'gentle',acc:'sunmoon'}}
+];
+const ROUTE = ['chenghuang','wenchang','sanbao','doumu','fude'];
+const byId = Object.fromEntries(D.map(d=>[d.id,d]));
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const GROUND = 1.2;
+
+/* ================= Q 版神明 (SVG, viewBox 0 0 120 150) ================= */
+const INK='#2b2027', HAIR='#1d1b22';
+const isDark=hex=>{const n=parseInt(hex.slice(1),16);return ((n>>16)*.3+((n>>8)&255)*.59+(n&255)*.11)<110;};
+const ACC={
+  tablet:'<rect x="55" y="92" width="10" height="32" rx="3" fill="#efe3c4" stroke="#c9b48a"/>',
+  brush:'<path d="M95 120 L106 90" stroke="#7a4a28" stroke-width="3.5" stroke-linecap="round"/><path d="M106 90 L110 79 L102 87Z" fill="#1d1b22"/>',
+  sword:'<path d="M95 122 L112 76" stroke="#cdd5df" stroke-width="4" stroke-linecap="round"/><path d="M89 116 L101 121" stroke="#e0b24a" stroke-width="4" stroke-linecap="round"/>',
+  ingot:'<path d="M83 128 Q95 117 107 128 Q101 135 95 135 Q89 135 83 128Z" fill="#f0c24a" stroke="#b8862a"/><ellipse cx="95" cy="124" rx="5" ry="3" fill="#f8dc84"/>',
+  vase:'<path d="M90 110 Q90 104 95 104 Q100 104 100 110 L102 124 Q95 130 88 124Z" fill="#f4f7f8" stroke="#9fb6c4"/><path d="M95 104 Q98 92 106 86 M97 98 L104 95" stroke="#4f8a4a" stroke-width="2" fill="none"/>',
+  flag:'<path d="M96 134 L96 70" stroke="#6b4a2a" stroke-width="3"/><rect x="97" y="70" width="18" height="4" fill="#3f8f8a"/><rect x="97" y="74" width="18" height="4" fill="#c8402e"/><rect x="97" y="78" width="18" height="4" fill="#f1ede4"/><rect x="97" y="82" width="18" height="4" fill="#22252e"/><rect x="97" y="86" width="18" height="4" fill="#e0b24a"/>',
+  abacus:'<rect x="82" y="116" width="26" height="17" rx="2" fill="#7a4a28"/><g fill="#f0c24a"><circle cx="87" cy="121" r="2"/><circle cx="93" cy="121" r="2"/><circle cx="103" cy="121" r="2"/><circle cx="90" cy="128" r="2"/><circle cx="98" cy="128" r="2"/><circle cx="104" cy="128" r="2"/></g>',
+  fan:'<path d="M95 120 L83 95 Q95 86 107 95Z" fill="#f2e2b0" stroke="#c9a65a"/><path d="M95 120 L89 92 M95 120 L95 90 M95 120 L101 92" stroke="#c9a65a" stroke-width="1"/>',
+  chain:'<g fill="none" stroke="#9aa3ad" stroke-width="2.6"><ellipse cx="96" cy="128" rx="4" ry="5"/><ellipse cx="96" cy="137" rx="4" ry="5"/><ellipse cx="96" cy="146" rx="4" ry="4"/></g>',
+  sunmoon:'<circle cx="18" cy="106" r="7" fill="#e8553f"/><path d="M100 99 a9 9 0 1 0 7 15 a7 7 0 1 1 -7 -15Z" fill="#f3d27a"/>',
+  yinyang:'<circle cx="95" cy="118" r="10" fill="#f1ede4" stroke="#1d1b22"/><path d="M95 108 a10 10 0 0 1 0 20 a5 5 0 0 1 0 -10 a5 5 0 0 0 0 -10Z" fill="#1d1b22"/><circle cx="95" cy="113" r="1.8" fill="#1d1b22"/><circle cx="95" cy="123" r="1.8" fill="#f1ede4"/>',
+  lens:'<path d="M95 122 L104 104" stroke="#7a4a28" stroke-width="3.5" stroke-linecap="round"/><circle cx="107" cy="97" r="8" fill="rgba(200,230,255,.55)" stroke="#e0b24a" stroke-width="3"/>',
+  medal:'<path d="M90 104 L95 115 L100 104" stroke="#c8402e" stroke-width="4" fill="none"/><circle cx="95" cy="122" r="7.5" fill="#f0c24a" stroke="#b8862a"/><path d="M95 117.5 l1.4 2.8 3.1.5-2.3 2.1.6 3.1-2.8-1.5-2.8 1.5.6-3.1-2.3-2.1 3.1-.5z" fill="#fff4c8"/>',
+  whip:'<path d="M95 122 L110 84" stroke="#5a3a22" stroke-width="4" stroke-linecap="round"/><path d="M110 84 q7 8 0 16 q-7 8 2 15" stroke="#5a3a22" stroke-width="2" fill="none"/>',
+  peach:'<path d="M95 112 q-12 2 -10 13 q2 9 10 9 q8 0 10 -9 q2 -11 -10 -13Z" fill="#f4a3a0"/><path d="M95 113 q-2 9 0 20" stroke="#e07d7a" stroke-width="1.4" fill="none"/><path d="M95 112 q-8 -7 -13 0 q7 3 13 0Z" fill="#4f8a4a"/>',
+  ji:'<rect x="85" y="99" width="20" height="25" rx="2" fill="#f2e6c8" stroke="#c8402e" stroke-width="2"/><text x="95" y="117" font-size="13" font-weight="700" text-anchor="middle" fill="#c8402e" font-family="Noto Serif TC,serif">急</text>',
+  scroll:'<rect x="83" y="112" width="25" height="13" rx="2" fill="#f2e6c8" stroke="#b8a070"/><rect x="81" y="109" width="4" height="19" rx="2" fill="#7a4a28"/><rect x="106" y="109" width="4" height="19" rx="2" fill="#7a4a28"/><path d="M88 116 H103 M88 120 H99" stroke="#b8a070" stroke-width="1.2"/>',
+  incense:'<path d="M93 122 L96 90 M95 122 L101 91 M97 122 L106 93" stroke="#a0703f" stroke-width="1.8" stroke-linecap="round"/><circle cx="96" cy="89" r="1.9" fill="#ff7a35"/><circle cx="101" cy="90" r="1.9" fill="#ff7a35"/><circle cx="106" cy="92" r="1.9" fill="#ff7a35"/>',
+  book:'<rect x="84" y="112" width="22" height="16" rx="2" fill="#c8402e"/><rect x="86" y="114" width="18" height="12" fill="#f2e6c8"/><path d="M95 114 V126" stroke="#c8402e"/>',
+  flowers:'<path d="M95 124 L92 104 M95 124 L98 102 M95 124 L104 106" stroke="#4f8a4a" stroke-width="2"/><circle cx="92" cy="102" r="4" fill="#f4d35e"/><circle cx="98" cy="100" r="4" fill="#e8684d"/><circle cx="104" cy="104" r="4" fill="#f2a7c3"/>',
+  basket:'<path d="M82 116 H108 L104 132 H86Z" fill="#b5884a" stroke="#7a5a2a"/><path d="M84 116 Q95 100 106 116" stroke="#7a5a2a" stroke-width="2" fill="none"/><circle cx="89" cy="114" r="4" fill="#e8553f"/><circle cx="96" cy="112" r="4.5" fill="#f0c24a"/><circle cx="103" cy="114" r="4" fill="#7fb04a"/>',
+  backsword:'', none:''
+};
+function hat(p){
+  switch(p.hat){
+    case 'wusha': return '<path d="M30 44 Q30 18 60 16 Q90 18 90 44 Q60 36 30 44Z" fill="'+HAIR+'"/><rect x="5" y="29" width="28" height="8" rx="4" fill="'+HAIR+'"/><rect x="87" y="29" width="28" height="8" rx="4" fill="'+HAIR+'"/><rect x="40" y="36" width="40" height="4" rx="2" fill="#e0b24a"/>';
+    case 'scholar': return '<path d="M30 44 Q30 18 60 16 Q90 18 90 44 Q60 36 30 44Z" fill="'+HAIR+'"/><path d="M33 30 L14 20 M87 30 L106 20" stroke="'+HAIR+'" stroke-width="6" stroke-linecap="round"/><circle cx="60" cy="26" r="5" fill="#e0b24a"/><rect x="40" y="36" width="40" height="4" rx="2" fill="#e0b24a"/>';
+    case 'tall': return '<path d="M32 42 L42 1 L78 1 L88 42 Q60 36 32 42Z" fill="#f7f4ec" stroke="#cfc8b8"/><g fill="#b5462c" font-size="8" font-weight="700" text-anchor="middle" font-family="Noto Serif TC,serif"><text x="60" y="12">一</text><text x="60" y="20">見</text><text x="60" y="28">大</text><text x="60" y="36">吉</text></g>';
+    case 'square': return '<path d="M32 42 L38 8 L82 8 L88 42 Q60 36 32 42Z" fill="'+HAIR+'"/><g fill="#e0b24a" font-size="7" font-weight="700" text-anchor="middle" font-family="Noto Serif TC,serif"><text x="60" y="18">天</text><text x="60" y="25">下</text><text x="60" y="32">太</text><text x="60" y="39">平</text></g>';
+    case 'helmet': return '<path d="M26 50 Q26 14 60 12 Q94 14 94 50 Q88 40 60 38 Q32 40 26 50Z" fill="#d9a441" stroke="#a87a26"/><path d="M60 13 L60 2" stroke="#c8402e" stroke-width="6" stroke-linecap="round"/><circle cx="60" cy="28" r="5" fill="#c8402e"/>';
+    case 'phoenix': return '<path d="M27 60 Q24 22 60 20 Q96 22 93 60 Q88 38 60 34 Q32 38 27 60Z" fill="'+HAIR+'"/><path d="M38 31 L44 14 L52 26 L60 9 L68 26 L76 14 L82 31 Q60 25 38 31Z" fill="#e0b24a"/><circle cx="60" cy="18" r="3" fill="#d8455a"/><path d="M33 34 L27 64 M87 34 L93 64" stroke="#e0b24a" stroke-width="2"/><circle cx="27" cy="66" r="3" fill="#d8455a"/><circle cx="93" cy="66" r="3" fill="#d8455a"/>';
+    case 'daoist': return '<path d="M28 54 Q28 22 60 22 Q92 22 92 54 Q84 36 60 34 Q36 36 28 54Z" fill="'+HAIR+'"/><rect x="45" y="7" width="30" height="19" rx="3" fill="'+HAIR+'"/><rect x="45" y="20" width="30" height="4" fill="#e0b24a"/><path d="M75 20 Q86 26 88 38" stroke="#5d86b8" stroke-width="3" fill="none"/>';
+    case 'hood': return '<path d="M21 80 Q16 16 60 14 Q104 16 99 80 Q93 44 60 34 Q27 44 21 80Z" fill="#fbf8f1" stroke="#e3dccb"/><path d="M40 38 Q60 30 80 38" stroke="'+HAIR+'" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="60" cy="46" r="2.6" fill="#d8455a"/>';
+    case 'roundcap': return '<path d="M30 42 Q30 15 60 13 Q90 15 90 42 Q60 34 30 42Z" fill="#8a2f22"/><rect x="33" y="36" width="54" height="6" rx="3" fill="#e0b24a"/><circle cx="60" cy="23" r="4" fill="#e0b24a"/><path d="M33 40 L22 50 M87 40 L98 50" stroke="#8a2f22" stroke-width="5" stroke-linecap="round"/>';
+    case 'hairShort': return '<path d="M28 58 Q24 22 60 21 Q96 22 92 58 Q90 36 70 33 Q56 40 40 36 Q31 42 28 58Z" fill="'+p.hair+'"/>';
+    case 'hairLong': return '<path d="M27 60 Q24 21 60 20 Q96 21 93 60 Q90 38 76 34 Q60 42 44 34 Q30 38 27 60Z" fill="'+p.hair+'"/>';
+    case 'hairBun': return '<circle cx="60" cy="19" r="11" fill="'+p.hair+'"/><path d="M28 54 Q26 24 60 23 Q94 24 92 54 Q86 36 60 35 Q34 36 28 54Z" fill="'+p.hair+'"/><path d="M50 17 L70 21" stroke="#c8402e" stroke-width="2.4" stroke-linecap="round"/>';
+    case 'cap': return '<path d="M29 50 Q28 34 34 30 L86 30 Q92 34 91 50 Q86 40 60 38 Q34 40 29 50Z" fill="#2b2320"/><path d="M30 44 Q30 17 60 16 Q90 17 90 44Z" fill="'+p.hair+'"/><path d="M60 40 Q82 35 104 44 Q82 49 60 44Z" fill="'+p.hair+'"/><circle cx="60" cy="19" r="3" fill="#fff4e6"/>';
+    case 'starcrown': return '<path d="M27 60 Q24 22 60 20 Q96 22 93 60 Q88 38 60 34 Q32 38 27 60Z" fill="'+HAIR+'"/><path d="M36 32 L42 15 L50 25 L60 6 L70 25 L78 15 L84 32 Q60 26 36 32Z" fill="#e0b24a"/><path d="M60 13 l2 4 4 .6-3 3 .8 4.4-3.8-2-3.8 2 .8-4.4-3-3 4-.6z" fill="#fff4c8"/>';
+  }
+  return '';
+}
+function face(p, skin){
+  const dark=isDark(skin), ink=dark?'#f4efe6':INK; let s='';
+  const eyes='<ellipse cx="49" cy="60" rx="3.4" ry="4.2" fill="'+ink+'"/><ellipse cx="71" cy="60" rx="3.4" ry="4.2" fill="'+ink+'"/>'+
+    (dark?'':'<circle cx="50.3" cy="58.4" r="1.2" fill="#fff"/><circle cx="72.3" cy="58.4" r="1.2" fill="#fff"/>');
+  if(p.mood==='happy') s+='<path d="M44 61 Q49 55 54 61 M66 61 Q71 55 76 61" stroke="'+ink+'" stroke-width="3" fill="none" stroke-linecap="round"/>';
+  else if(p.mood==='gentle') s+='<path d="M44 59 Q49 64 54 59 M66 59 Q71 64 76 59" stroke="'+ink+'" stroke-width="3" fill="none" stroke-linecap="round"/>';
+  else s+=eyes;
+  if(p.mood==='fierce') s+='<path d="M40 49 L55 55 M80 49 L65 55" stroke="'+ink+'" stroke-width="3.6" stroke-linecap="round"/>';
+  if(!dark) s+='<ellipse cx="41" cy="69" rx="5.5" ry="3.4" fill="#f08a8a" opacity=".5"/><ellipse cx="79" cy="69" rx="5.5" ry="3.4" fill="#f08a8a" opacity=".5"/>';
+  if(p.mood==='happy') s+='<path d="M52 71 Q60 81 68 71Z" fill="#b5462c"/>';
+  else if(p.mood==='fierce') s+='<path d="M53 77 Q60 71 67 77" stroke="'+ink+'" stroke-width="2.6" fill="none" stroke-linecap="round"/>';
+  else if(p.mood==='tongue') s+='<path d="M55 72 L56 96 Q60 101 64 96 L65 72Z" fill="#d8455a"/><path d="M53 72 Q60 76 67 72" stroke="'+ink+'" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
+  else s+='<path d="M55 73 Q60 77 65 73" stroke="'+ink+'" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
+  if(p.beard==='long') s+='<path d="M50 72 Q60 67 70 72" stroke="'+HAIR+'" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M48 78 Q46 96 52 104 M60 80 L60 110 M72 78 Q74 96 68 104" stroke="'+HAIR+'" stroke-width="3" fill="none" stroke-linecap="round"/>';
+  if(p.beard==='short') s+='<path d="M50 71 Q60 67 70 71" stroke="'+HAIR+'" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M56 80 Q60 93 64 80Z" fill="'+HAIR+'"/>';
+  if(p.beard==='big') s+='<path d="M29 60 Q33 102 60 106 Q87 102 91 60 Q82 84 60 81 Q38 84 29 60Z" fill="'+HAIR+'"/>';
+  if(p.beard==='white') s+='<path d="M41 50 Q48 46 55 50 M65 50 Q72 46 79 50" stroke="#f5f3ee" stroke-width="3.4" fill="none" stroke-linecap="round"/><path d="M42 70 Q60 112 78 70 Q60 82 42 70Z" fill="#f5f3ee"/>';
+  return s;
+}
+function figure(p){
+  if(p.tiger) return tiger();
+  const skin=p.face||'#f4d3b2', robe=p.robe, trim=p.trim||'#e8dcc0'; let s='';
+  if(p.halo) s+='<circle cx="60" cy="54" r="45" fill="#ffe9a8" opacity=".45"/><circle cx="60" cy="54" r="45" fill="none" stroke="#e0b24a" stroke-width="2"/>';
+  if(p.hat==='hairLong') s+='<path d="M25 58 Q22 106 36 112 L84 112 Q98 106 95 58Z" fill="'+p.hair+'"/>';
+  if(p.hat==='phoenix'||p.hat==='starcrown') s+='<circle cx="60" cy="20" r="13" fill="'+HAIR+'"/>';
+  if(p.acc==='backsword') s+='<g transform="rotate(30 86 70)"><rect x="83" y="26" width="6" height="72" rx="2" fill="#cdd5df"/><rect x="78" y="40" width="16" height="5" rx="2" fill="#e0b24a"/></g>';
+  s+='<path d="M32 90 Q60 78 88 90 L101 141 Q60 150 19 141 Z" fill="'+robe+'" stroke="rgba(0,0,0,.2)"/>';
+  s+='<path d="M47 84 L60 104 L73 84" fill="none" stroke="'+trim+'" stroke-width="4" stroke-linejoin="round"/>';
+  s+='<rect x="26" y="112" width="68" height="7" rx="3" fill="'+trim+'"/>';
+  if(p.armor) s+='<path d="M37 92 Q60 85 83 92 L81 111 Q60 115 39 111Z" fill="#d9a441" stroke="#a87a26"/><circle cx="60" cy="101" r="6" fill="#c8402e"/>';
+  s+='<ellipse cx="27" cy="114" rx="11" ry="9" fill="'+robe+'" stroke="rgba(0,0,0,.2)"/><ellipse cx="93" cy="114" rx="11" ry="9" fill="'+robe+'" stroke="rgba(0,0,0,.2)"/>';
+  s+='<circle cx="25" cy="120" r="5.5" fill="'+skin+'"/><circle cx="95" cy="120" r="5.5" fill="'+skin+'"/>';
+  s+=ACC[p.acc]||'';
+  s+='<circle cx="60" cy="56" r="32" fill="'+skin+'"/>';
+  s+=face(p, skin);
+  s+=hat(p);
+  return s;
+}
+function tiger(){
+  const O='#ea8b2e', D='#3a2418';
+  return '<path d="M96 120 Q117 106 108 86" stroke="'+O+'" stroke-width="8" fill="none" stroke-linecap="round"/>'+
+   '<ellipse cx="60" cy="118" rx="38" ry="26" fill="'+O+'"/>'+
+   '<path d="M34 108 L42 112 M33 120 L42 121 M86 108 L78 112 M87 120 L78 121" stroke="'+D+'" stroke-width="3" stroke-linecap="round"/>'+
+   '<ellipse cx="38" cy="140" rx="11" ry="7" fill="#fff4e6"/><ellipse cx="82" cy="140" rx="11" ry="7" fill="#fff4e6"/>'+
+   '<circle cx="33" cy="31" r="11" fill="'+O+'"/><circle cx="87" cy="31" r="11" fill="'+O+'"/><circle cx="33" cy="31" r="5.5" fill="#f4b3a0"/><circle cx="87" cy="31" r="5.5" fill="#f4b3a0"/>'+
+   '<circle cx="60" cy="58" r="34" fill="#f19b3c"/>'+
+   '<path d="M52 33 H68 M52 39 H68 M54 45 H66 M60 33 V45" stroke="'+D+'" stroke-width="3" stroke-linecap="round"/>'+
+   '<path d="M27 56 L37 58 M27 64 L37 63 M93 56 L83 58 M93 64 L83 63" stroke="'+D+'" stroke-width="3" stroke-linecap="round"/>'+
+   '<ellipse cx="60" cy="73" rx="17" ry="12" fill="#fff4e6"/>'+
+   '<ellipse cx="48" cy="58" rx="3.6" ry="4.4" fill="'+D+'"/><ellipse cx="72" cy="58" rx="3.6" ry="4.4" fill="'+D+'"/><circle cx="49.3" cy="56.4" r="1.3" fill="#fff"/><circle cx="73.3" cy="56.4" r="1.3" fill="#fff"/>'+
+   '<path d="M56 66 L64 66 L60 70Z" fill="'+D+'"/><path d="M54 74 Q57 77 60 73 Q63 77 66 74" stroke="'+D+'" stroke-width="2" fill="none"/>'+
+   '<circle cx="60" cy="88" r="9" fill="#f0c24a" stroke="#b8862a" stroke-width="1.5"/><rect x="57" y="85" width="6" height="6" fill="#b8862a"/>';
+}
+function chibiSVG(look){
+  let inner;
+  if(look.pair) inner='<g transform="translate(-2 22) scale(.72)">'+figure(look.pair[0])+'</g><g transform="translate(36 22) scale(.72)">'+figure(look.pair[1])+'</g>';
+  else inner=figure(look);
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 150">'+inner+'</svg>';
+}
+D.forEach(d=>{d.svg=chibiSVG(d.look); (d.subs||[]).forEach(x=>x.svg=chibiSVG(x.look));});
+
+/* ================= 3D scene ================= */
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement); renderer.domElement.tabIndex=-1;
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x10162a);
+scene.fog=new THREE.Fog(0x10162a,30,75);
+const camera=new THREE.PerspectiveCamera(42,1,0.1,300);
+const HOME_POS=new THREE.Vector3(13,11,17), HOME_TGT=new THREE.Vector3(0,2.8,0);
+camera.position.copy(HOME_POS);
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.target.copy(HOME_TGT); controls.enableDamping=true; controls.enablePan=false;
+controls.maxPolarAngle=Math.PI/2.15; controls.minDistance=4.5; controls.maxDistance=40;
+controls.autoRotate=!reduce; controls.autoRotateSpeed=.45;
+
+scene.add(new THREE.HemisphereLight(0x9fb2ff,0x2b2218,.75));
+const key=new THREE.DirectionalLight(0xffcf9a,.95);
+key.position.set(-10,16,10); key.castShadow=true; key.shadow.mapSize.set(2048,2048);
+Object.assign(key.shadow.camera,{left:-12,right:12,top:12,bottom:-12,near:1,far:50});
+key.shadow.camera.updateProjectionMatrix(); scene.add(key);
+const warm=new THREE.PointLight(0xff8a4a,1.1,14,2); warm.position.set(0,3.2,4.2); scene.add(warm);
+
+function glowTex(){
+  const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d');
+  const g=x.createRadialGradient(32,32,0,32,32,32);
+  g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(.35,'rgba(255,255,255,.42)'); g.addColorStop(1,'rgba(255,255,255,0)');
+  x.fillStyle=g; x.fillRect(0,0,64,64); return new THREE.CanvasTexture(c);
+}
+const GLOW=glowTex();
+
+/* sky */
+{
+  const n=500,p=new Float32Array(n*3);
+  for(let i=0;i<n;i++){const th=Math.random()*Math.PI*2, ph=Math.random()*Math.PI*.42, r=110;
+    p[i*3]=r*Math.sin(ph)*Math.cos(th); p[i*3+1]=r*Math.cos(ph)+4; p[i*3+2]=r*Math.sin(ph)*Math.sin(th);}
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xdcd6c4,size:.55,fog:false,transparent:true,opacity:.8})));
+  const moon=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xffe9b8,fog:false,transparent:true,depthWrite:false}));
+  moon.position.set(-55,38,-70); moon.scale.set(16,16,1); scene.add(moon);
+  const disc=new THREE.Mesh(new THREE.CircleGeometry(2.6,40),new THREE.MeshBasicMaterial({color:0xfff2d2,fog:false}));
+  disc.position.copy(moon.position); disc.lookAt(0,0,0); scene.add(disc);
+}
+
+/* island */
+function groundH(x,z){
+  const r=Math.hypot(x,z); if(r<5.9) return GROUND;
+  const t=r-5.9; let y=GROUND-Math.pow(t/3.2,1.6)*2.8;
+  y+=(Math.sin(x*1.3)*Math.cos(z*1.1)*.35+Math.sin(x*2.7+z*1.9)*.12)*Math.min(1,t/1.2);
+  return y;
+}
+{
+  const geo=new THREE.PlaneGeometry(28,28,140,140); geo.rotateX(-Math.PI/2);
+  const pos=geo.attributes.position,col=[],c=new THREE.Color();
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),z=pos.getZ(i),y=groundH(x,z),r=Math.hypot(x,z); pos.setY(i,y);
+    if(r<5.9){const odd=(Math.floor(x/.9)+Math.floor(z/.9))&1; c.set(odd?0xb8ab94:0xa99c86);}
+    else if(y>.7) c.set(0x4c8448); else if(y>.2) c.set(0x3f7340); else if(y>-.2) c.set(0xd3bf92); else c.set(0x9b8763);
+    col.push(c.r,c.g,c.b);
+  }
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3)); geo.computeVertexNormals();
+  const island=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({vertexColors:true,flatShading:true,roughness:.95}));
+  island.receiveShadow=true; scene.add(island);
+
+  const N=56, inst=new THREE.InstancedMesh(new THREE.BoxGeometry(.18,.42,.42),new THREE.MeshStandardMaterial({color:0xd6ccb8,roughness:.9}),N);
+  const m=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3(1,1,1); let k=0;
+  for(let i=0;i<N;i++){const a=i/N*Math.PI*2; if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<.28) continue;
+    q.setFromAxisAngle(new THREE.Vector3(0,1,0),a); m.compose(new THREE.Vector3(5.75*Math.sin(a),GROUND+.21,5.75*Math.cos(a)),q,s); inst.setMatrixAt(k++,m);}
+  inst.count=k; inst.castShadow=true; scene.add(inst);
+
+  const trunkM=new THREE.MeshStandardMaterial({color:0x5b3b24}),leafA=new THREE.MeshStandardMaterial({color:0x2f6b3a,flatShading:true}),leafB=new THREE.MeshStandardMaterial({color:0x3d7d3f,flatShading:true});
+  let placed=0,guard=0;
+  while(placed<34&&guard++<400){
+    const a=Math.random()*Math.PI*2,r=6.3+Math.random()*1.6;
+    if(Math.abs(Math.atan2(Math.sin(a),Math.cos(a)))<.45) continue;
+    const x=r*Math.sin(a),z=r*Math.cos(a),y=groundH(x,z); if(y<.35) continue;
+    const t=new THREE.Group(),h=.5+Math.random()*.4;
+    const tr=new THREE.Mesh(new THREE.CylinderGeometry(.07,.1,h,6),trunkM); tr.position.y=h/2;
+    const lf=new THREE.Mesh(new THREE.IcosahedronGeometry(.42+Math.random()*.2,0),Math.random()<.5?leafA:leafB); lf.position.y=h+.25;
+    [tr,lf].forEach(o=>{o.castShadow=true;t.add(o);}); t.position.set(x,y,z); scene.add(t); placed++;
+  }
+}
+
+/* water */
+const water=(function(){
+  const g=new THREE.PlaneGeometry(170,170,90,90); g.rotateX(-Math.PI/2);
+  const w=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:0x1b3a63,roughness:.35,metalness:.15,flatShading:true,transparent:true,opacity:.93}));
+  w.position.y=-.25; w.receiveShadow=true; scene.add(w); return w;
+})();
+const wBase=Float32Array.from(water.geometry.attributes.position.array);
+
+/* temple (faces +z) */
+{
+  const T=new THREE.Group(); scene.add(T);
+  const stone=new THREE.MeshStandardMaterial({color:0xcdc1a9,roughness:.9}), wall=new THREE.MeshStandardMaterial({color:0xa5301e,roughness:.8});
+  const pillar=new THREE.MeshStandardMaterial({color:0x7e2416,roughness:.7}), roof=new THREE.MeshStandardMaterial({color:0xb84a2c,roughness:.6,flatShading:true});
+  const goldM=new THREE.MeshStandardMaterial({color:0xd9a441,roughness:.35,metalness:.6}), dark=new THREE.MeshStandardMaterial({color:0x3b120c,roughness:.8});
+  const add=(geo,mat,x,y,z)=>{const o=new THREE.Mesh(geo,mat);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;T.add(o);return o;};
+  add(new THREE.BoxGeometry(6.4,.5,4.8),stone,0,GROUND+.25,0);
+  add(new THREE.BoxGeometry(2.2,.25,.7),stone,0,GROUND+.12,2.7);
+  add(new THREE.BoxGeometry(5,1.9,3.4),wall,0,GROUND+1.45,-.1);
+  add(new THREE.BoxGeometry(1.5,1.35,.05),dark,0,GROUND+1.18,1.63);
+  add(new THREE.BoxGeometry(1.7,.12,.08),goldM,0,GROUND+1.92,1.65);
+  for(let i=0;i<6;i++) add(new THREE.CylinderGeometry(.12,.13,1.9,10),pillar,-2.2+i*.88,GROUND+1.45,1.85);
+  const hip=(sx,sy,sz,y)=>{const o=add(new THREE.ConeGeometry(1,1,4,1),roof,0,y,-.1);o.rotation.y=Math.PI/4;o.scale.set(sx,sy,sz);return o;};
+  hip(4.45,1.05,3.25,GROUND+2.92);
+  add(new THREE.BoxGeometry(3.1,1.2,2.1),wall,0,GROUND+3.85,-.1);
+  for(let i=0;i<4;i++) add(new THREE.CylinderGeometry(.08,.09,1.2,8),pillar,-1.2+i*.8,GROUND+3.85,1.0);
+  hip(2.75,.85,2.05,GROUND+4.87);
+  add(new THREE.SphereGeometry(.18,16,12),goldM,0,GROUND+5.38,-.1);
+  [-1,1].forEach(sd=>{const f=add(new THREE.ConeGeometry(.09,.55,6),goldM,sd*1.15,GROUND+5.0,-.1); f.rotation.z=sd*-.9;});
+  const pc=document.createElement('canvas'); pc.width=256; pc.height=64; const px=pc.getContext('2d');
+  const drawPlaque=()=>{px.fillStyle='#1d2a4a';px.fillRect(0,0,256,64);px.strokeStyle='#d9a441';px.lineWidth=5;px.strokeRect(4,4,248,56);
+    px.fillStyle='#e8c46a';px.font='900 34px "Noto Serif TC", serif';px.textAlign='center';px.textBaseline='middle';px.fillText('城隍廟',128,34);};
+  drawPlaque();
+  const plaque=new THREE.Mesh(new THREE.PlaneGeometry(1.3,.33),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(pc)}));
+  plaque.position.set(0,GROUND+3.95,1.13); T.add(plaque);
+  if(document.fonts) document.fonts.ready.then(()=>{drawPlaque(); plaque.material.map.needsUpdate=true;});
+  add(new THREE.CylinderGeometry(.38,.3,.42,16),goldM,0,GROUND+.55,4.25);
+  add(new THREE.CylinderGeometry(.08,.08,.34,8),goldM,0,GROUND+.17,4.25);
+}
+
+/* smoke */
+const smoke=[];
+for(let i=0;i<14;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0xcfc8bb,transparent:true,opacity:0,depthWrite:false}));
+  s.userData.phase=i/14; scene.add(s); smoke.push(s);}
+
+/* five camp flags */
+const flags=[];
+[[80,0x3f8f8a],[12,0xc8402e],[-80,0xe9e4d8],[168,0x22252e],[195,0xe0b24a]].forEach(([deg,c],i)=>{
+  const a=deg*Math.PI/180,R=i===4?3.7:5.45;
+  const g=new THREE.Group(); g.position.set(R*Math.sin(a),GROUND,R*Math.cos(a));
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.8,6),new THREE.MeshStandardMaterial({color:0x6b4a2a})); pole.position.y=.9; pole.castShadow=true; g.add(pole);
+  const sh=new THREE.Shape(); sh.moveTo(0,0); sh.lineTo(.7,-.22); sh.lineTo(0,-.48); sh.lineTo(0,0);
+  const fl=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshStandardMaterial({color:c,side:THREE.DoubleSide}));
+  fl.position.set(.02,1.78,0); fl.castShadow=true; g.add(fl); g.userData.flag=fl; g.userData.seed=i*1.7;
+  scene.add(g); flags.push(g);
+});
+
+/* chibi standees + lanterns */
+function svgTexture(svg, cb){
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas'); c.width=288; c.height=360; const x=c.getContext('2d');
+    x.shadowColor='rgba(255,238,205,.95)'; x.shadowBlur=10;
+    x.drawImage(img,24,24,240,300); x.shadowBlur=0; x.drawImage(img,24,24,240,300);
+    const t=new THREE.CanvasTexture(c); t.anisotropy=4; cb(t);
+  };
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+const markers={},hits=[];
+const pedM=new THREE.MeshStandardMaterial({color:0xd6ccb8,roughness:.9});
+D.forEach(d=>{
+  const g=new THREE.Group(), col=new THREE.Color(CATS[d.cat].color);
+  const H = d.big?1.7 : d.look.tiger?1.15 : 1.35;   // standee height
+  let foot=0;
+  if(d.pos){ g.position.set(d.pos[0],d.pos[1],d.pos[2]); }
+  else{
+    const a=d.a*Math.PI/180; g.position.set(d.R*Math.sin(a),GROUND,d.R*Math.cos(a)); foot=.16;
+    const ped=new THREE.Mesh(new THREE.CylinderGeometry(.42,.48,.16,18),pedM); ped.position.y=.08; ped.castShadow=true; ped.receiveShadow=true; g.add(ped);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(.55,.66,36),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0,side:THREE.DoubleSide}));
+    ring.rotation.x=-Math.PI/2; ring.position.y=.02; g.add(ring); g.userData.ring=ring;
+  }
+  const W=H*0.8;
+  const spr=new THREE.Sprite(new THREE.SpriteMaterial({color:0xf2ece0,transparent:true,alphaTest:.05}));
+  spr.center.set(.5,.12); spr.scale.set(W,H,1); spr.position.y=foot; g.add(spr);
+  svgTexture(d.svg,t=>{spr.material.map=t; spr.material.needsUpdate=true;});
+  const r=d.big?.17:.13, ly=foot+H*.88+.2;
+  const lamp=new THREE.Mesh(new THREE.SphereGeometry(r,18,12),new THREE.MeshBasicMaterial({color:col,transparent:true}));
+  lamp.position.y=ly; g.add(lamp);
+  const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:col,transparent:true,opacity:.6,depthWrite:false,blending:THREE.AdditiveBlending}));
+  halo.scale.set(r*7,r*7,1); halo.position.y=ly; g.add(halo);
+  const hit=new THREE.Mesh(new THREE.SphereGeometry(H*.52,8,6),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+  hit.position.y=foot+H*.38; hit.userData.id=d.id; g.add(hit); hits.push(hit);
+  scene.add(g);
+  markers[d.id]={g,spr,lamp,halo,r,ly,H,W,foot,seed:Math.random()*6,anchor:new THREE.Vector3()};
+});
+/* eight bureau mini standees on an arc behind 八司 */
+const subMinis=[];
+{
+  const B=byId.basi, n=B.subs.length;
+  B.subs.forEach((sub,i)=>{
+    const a=(-123+i*(46/(n-1)))*Math.PI/180, Rr=5.15;
+    const g=new THREE.Group(); g.position.set(Rr*Math.sin(a),GROUND,Rr*Math.cos(a));
+    const ped=new THREE.Mesh(new THREE.CylinderGeometry(.22,.25,.1,14),pedM); ped.position.y=.05; ped.receiveShadow=true; g.add(ped);
+    const H=.82, spr=new THREE.Sprite(new THREE.SpriteMaterial({color:0xf2ece0,transparent:true,alphaTest:.05}));
+    spr.center.set(.5,.12); spr.scale.set(H*.8,H,1); spr.position.y=.1; g.add(spr);
+    svgTexture(sub.svg,t=>{spr.material.map=t; spr.material.needsUpdate=true;});
+    const hit=new THREE.Mesh(new THREE.SphereGeometry(.34,8,6),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+    hit.position.y=.1+H*.38; hit.userData.id='basi'; hit.userData.sub=i; g.add(hit); hits.push(hit);
+    scene.add(g);
+    subMinis.push({g,spr,H,seed:Math.random()*6,anchor:new THREE.Vector3(),hop:0});
+  });
+}
+const focusPoint=id=>{const m=markers[id]; return m.g.position.clone().add(new THREE.Vector3(0,m.foot+m.H*.42,0));};
+const lampWorld=id=>{const m=markers[id]; return m.g.position.clone().add(new THREE.Vector3(0,m.ly,0));};
+
+/* route line */
+const routeLine=(function(){
+  const P=ROUTE.map(lampWorld);
+  const pts=[P[0],new THREE.Vector3(-1.5,5.2,2.8),P[1],P[2],P[3],new THREE.Vector3(1.4,6,-2.6),new THREE.Vector3(-1.8,4.6,-3.8),P[4]];
+  const curve=new THREE.CatmullRomCurve3(pts);
+  const geo=new THREE.BufferGeometry().setFromPoints(curve.getPoints(240));
+  const line=new THREE.Line(geo,new THREE.LineDashedMaterial({color:0xe0b24a,dashSize:.22,gapSize:.14,transparent:true,opacity:.95}));
+  line.computeLineDistances(); line.visible=false; scene.add(line); return line;
+})();
+
+/* labels */
+const labelsEl=document.getElementById('labels');
+D.forEach(d=>{
+  const t=document.createElement('button'); t.type='button'; t.className='tag'; t.style.setProperty('--c',CATS[d.cat].color);
+  t.innerHTML='<i></i>'+d.name; t.tabIndex=-1;
+  t.addEventListener('click',()=>{stopRoute(); select(d.id,true);});
+  labelsEl.appendChild(t); markers[d.id].tag=t;
+});
+
+byId.basi.subs.forEach((sub,i)=>{
+  const t=document.createElement('button'); t.type='button'; t.className='tag subtag off'; t.style.setProperty('--c',CATS.law.color);
+  t.innerHTML='<i></i>'+sub.n; t.tabIndex=-1;
+  t.addEventListener('click',()=>{stopRoute(); select('basi',true); openSub(i);});
+  labelsEl.appendChild(t); subMinis[i].tag=t;
+});
+
+/* ================= 信徒 walkers ================= */
+const BELIEVERS=[
+ {hat:'hairBun',hair:'#c9c5bd',robe:'#6f8fb0',trim:'#e8e2d6',mood:'happy',acc:'incense'},
+ {hat:'hairShort',hair:'#1d1b22',robe:'#2f5d9a',trim:'#f1ede4',mood:'calm',acc:'book'},
+ {hat:'hairShort',hair:'#2b2320',robe:'#3a3a44',trim:'#e8e2d6',mood:'calm',acc:'incense'},
+ {hat:'hairLong',hair:'#4a2e22',robe:'#e7a4a0',trim:'#fff4e6',mood:'gentle',acc:'flowers'},
+ {hat:'cap',hair:'#c8402e',robe:'#7a8a5a',trim:'#e8e2d6',mood:'happy',acc:'incense'},
+ {hat:'hairLong',hair:'#1d1b22',robe:'#7e5ba6',trim:'#f3d27a',mood:'happy',acc:'basket'},
+ {hat:'cap',hair:'#e0b24a',robe:'#e07a3a',trim:'#fff4e6',mood:'happy',acc:'none',kid:true}
+];
+const RW=5.35, groundTargets=D.filter(d=>!d.pos), believers=[];
+const angDiff=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
+let showBelievers=true;
+function pickTarget(b){
+  let d, n=0; do{ d=groundTargets[Math.floor(Math.random()*groundTargets.length)]; }while(b.target&&d.id===b.target.id&&n++<5);
+  b.target=d; b.tAng=d.a*Math.PI/180+(Math.random()-.5)*.22; b.tR=Math.min(RW,d.R+.62); b.phase='out';
+}
+function startPray(b){
+  const d=b.target, pool=d.subs?d.subs.flatMap(x=>x.pray):d.pray;
+  b.bubble.textContent='祈求'+pool[Math.floor(Math.random()*pool.length)];
+  b.bubble.style.setProperty('--c',CATS[d.cat].color);
+}
+BELIEVERS.forEach((look,i)=>{
+  const H=look.kid?.7:.95, g=new THREE.Group();
+  const spr=new THREE.Sprite(new THREE.SpriteMaterial({color:0xf2ece0,transparent:true,alphaTest:.05}));
+  spr.center.set(.5,.12); spr.scale.set(H*.8,H,1); g.add(spr);
+  svgTexture(chibiSVG(look),t=>{spr.material.map=t; spr.material.needsUpdate=true;});
+  const sh=new THREE.Mesh(new THREE.CircleGeometry(.2,16),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.28,depthWrite:false}));
+  sh.rotation.x=-Math.PI/2; sh.position.y=.015; g.add(sh); scene.add(g);
+  const bubble=document.createElement('div'); bubble.className='bubble off'; labelsEl.appendChild(bubble);
+  const b={g,spr,H,bubble,ang:i/BELIEVERS.length*Math.PI*2+.3,r:RW,phase:'out',target:null,timer:0,seed:Math.random()*6,
+    speed:(look.kid?.95:.7)+Math.random()*.3,anchor:new THREE.Vector3()};
+  pickTarget(b); b.g.position.set(RW*Math.sin(b.ang),GROUND,RW*Math.cos(b.ang)); believers.push(b);
+});
+function updateBelievers(dt,t){
+  believers.forEach(b=>{
+    let walking=false;
+    if(b.phase==='pray'){ b.timer-=dt; if(b.timer<=0){ b.bubble.classList.add('off'); pickTarget(b); } }
+    else{
+      const step=b.speed*dt; walking=true;
+      if(b.phase==='out'){ const dr=RW-b.r; if(Math.abs(dr)<=step){b.r=RW; b.phase='orbit';} else b.r+=Math.sign(dr)*step; }
+      else if(b.phase==='orbit'){ const da=angDiff(b.ang,b.tAng), as=step/b.r; if(Math.abs(da)<=as){b.ang=b.tAng; b.phase='in';} else b.ang+=Math.sign(da)*as; }
+      else if(b.phase==='in'){ const dr=b.tR-b.r; if(Math.abs(dr)<=step){b.r=b.tR; b.phase='pray'; b.timer=3.5+Math.random()*3; startPray(b);} else b.r+=Math.sign(dr)*step; }
+    }
+    b.g.position.set(b.r*Math.sin(b.ang),GROUND,b.r*Math.cos(b.ang));
+    const wk=t*9+b.seed;
+    b.spr.position.y=walking?Math.abs(Math.sin(wk))*.05:0;
+    b.spr.material.rotation=walking?Math.sin(wk)*.07:0;
+    const bow=b.phase==='pray'?1-Math.max(0,Math.sin(t*2.4+b.seed))*.07:1;
+    b.spr.scale.set(b.H*.8,b.H*bow,1);
+  });
+}
+const walkBtn=document.getElementById('walkers');
+walkBtn.addEventListener('click',()=>{
+  showBelievers=!showBelievers; walkBtn.setAttribute('aria-pressed',String(showBelievers));
+  walkBtn.textContent='信徒走動：'+(showBelievers?'開':'關');
+  believers.forEach(b=>{b.g.visible=showBelievers; if(!showBelievers) b.bubble.classList.add('off');});
+});
+
+/* ================= panel ================= */
+const $=id=>document.getElementById(id);
+const chipsEl=$('chips'), listEl=$('list');
+let filter='all', current=null, routeIdx=-1;
+
+const allChip=document.createElement('button'); allChip.type='button'; allChip.className='chip'; allChip.textContent='全部'; allChip.dataset.cat='all';
+chipsEl.appendChild(allChip);
+Object.entries(CATS).forEach(([k,c])=>{const b=document.createElement('button'); b.type='button'; b.className='chip'; b.dataset.cat=k;
+  b.style.setProperty('--c',c.color); b.innerHTML='<i></i>'+c.name; chipsEl.appendChild(b);});
+chipsEl.addEventListener('click',e=>{const b=e.target.closest('.chip'); if(!b) return; filter=b.dataset.cat; applyFilter();});
+
+Object.keys(CATS).forEach(cat=>D.filter(d=>d.cat===cat).forEach(d=>{
+  const li=document.createElement('li'); li.dataset.cat=d.cat;
+  const b=document.createElement('button'); b.type='button'; b.dataset.id=d.id; b.style.setProperty('--c',CATS[d.cat].color);
+  b.innerHTML='<span class="mini">'+d.svg+'</span><b></b><small></small>';
+  b.querySelector('b').textContent=d.name; b.querySelector('small').textContent=d.analog;
+  b.addEventListener('click',()=>{stopRoute(); select(d.id,true);});
+  li.appendChild(b); listEl.appendChild(li);
+}));
+
+function applyFilter(){
+  chipsEl.querySelectorAll('.chip').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.cat===filter)));
+  listEl.querySelectorAll('li').forEach(li=>li.hidden=filter!=='all'&&li.dataset.cat!==filter);
+  D.forEach(d=>{const on=filter==='all'||d.cat===filter, m=markers[d.id];
+    m.lamp.material.opacity=on?1:.15; m.halo.material.opacity=on?.6:.04; m.spr.material.opacity=on?1:.22;
+    m.tag.classList.toggle('dim',!on);});
+  subMinis.forEach(m=>{m.spr.material.opacity=(filter==='all'||filter==='law')?1:.22;});
+}
+const fill=(el,items,tag)=>{el.textContent=''; items.forEach(t=>{const li=document.createElement(tag||'li'); li.textContent=t; el.appendChild(li);});};
+
+function select(id,fly){
+  const d=byId[id]; current=id; const c=CATS[d.cat].color;
+  $('card').style.setProperty('--c',c);
+  $('c-avatar').innerHTML=d.svg;
+  $('c-cat').textContent=CATS[d.cat].name; $('c-loc').textContent=d.loc;
+  $('c-name').textContent=d.name; $('c-alias').textContent=d.alias; $('c-duty').textContent=d.duty;
+  fill($('c-pray'),d.pray); fill($('c-cases'),d.cases);
+  $('c-tip').textContent=d.tip; $('c-tip').hidden=!d.tip;
+  $('c-analog').textContent=d.analog; $('c-role').textContent=d.role;
+  const sw=$('c-subs-wrap'), sl=$('c-subs'); sl.textContent=''; sw.hidden=!d.subs;
+  (d.subs||[]).forEach((x,i)=>{
+    const det=document.createElement('details'); det.dataset.i=i;
+    det.innerHTML='<summary><span class="mini">'+x.svg+'</span><span><b></b><small></small></span></summary><div class="sub-body"><ul class="tags"></ul><p><span class="k">例如</span><span class="ex"></span></p><p><span class="k">陽間對照</span><b class="an"></b></p></div>';
+    det.querySelector('b').textContent=x.n; det.querySelector('small').textContent=x.role;
+    fill(det.querySelector('.tags'),x.pray); det.querySelector('.ex').textContent=x.ex; det.querySelector('.an').textContent=x.analog;
+    det.addEventListener('toggle',()=>{ if(det.open){ sl.querySelectorAll('details').forEach(o=>{if(o!==det) o.open=false;}); if(subMinis[i]) subMinis[i].hop=performance.now(); } });
+    sl.appendChild(det);
+  });
+  listEl.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',String(b.dataset.id===id)));
+  D.forEach(x=>{const m=markers[x.id],on=x.id===id; m.tag.classList.toggle('on',on); if(m.g.userData.ring) m.g.userData.ring.material.opacity=on?.85:0; m.hop=on?performance.now():0;});
+  if(fly) flyTo(focusPoint(id), d.pos?7:5.6);
+  const panel=document.querySelector('aside.panel'); if(fly) panel.scrollTo({top:0,behavior:reduce?'auto':'smooth'});
+}
+
+function openSub(i){
+  const det=document.querySelector('#c-subs details[data-i="'+i+'"]'); if(!det) return;
+  det.open=true; setTimeout(()=>det.scrollIntoView({block:'nearest',behavior:reduce?'auto':'smooth'}),reduce?0:350);
+}
+function showRoute(){
+  select(ROUTE[routeIdx],true);
+  $('route-nav').hidden=false; routeLine.visible=true;
+  $('route-step').textContent='參拜路線・第 '+(routeIdx+1)+'／5 爐・每爐各上一柱香';
+  $('r-prev').disabled=routeIdx===0; $('r-next').textContent=routeIdx===4?'完成':'下一爐 →';
+}
+function stopRoute(){routeIdx=-1; $('route-nav').hidden=true; routeLine.visible=false;}
+$('route-btn').addEventListener('click',()=>{filter='all'; applyFilter(); routeIdx=0; showRoute();});
+$('r-prev').addEventListener('click',()=>{if(routeIdx>0){routeIdx--; showRoute();}});
+$('r-next').addEventListener('click',()=>{if(routeIdx<4){routeIdx++; showRoute();} else {stopRoute(); goHome();}});
+$('r-end').addEventListener('click',()=>stopRoute());
+$('overview').addEventListener('click',()=>goHome());
+
+/* camera flights */
+let fly=null;
+function startFly(toT,toP){
+  controls.autoRotate=false;
+  if(reduce){controls.target.copy(toT); camera.position.copy(toP); return;}
+  fly={t0:performance.now(),dur:1100,fT:controls.target.clone(),tT:toT,fP:camera.position.clone(),tP:toP};
+}
+function flyTo(target,dist){
+  const dir=camera.position.clone().sub(controls.target).normalize();
+  if(dir.y<.3){dir.y=.3;dir.normalize();} if(dir.y>.6){dir.y=.6;dir.normalize();}
+  startFly(target.clone(),target.clone().add(dir.multiplyScalar(dist)));
+}
+function goHome(){startFly(HOME_TGT.clone(),HOME_POS.clone());}
+controls.addEventListener('start',()=>{fly=null; controls.autoRotate=false;});
+
+/* picking */
+const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(); let down=null; const el=renderer.domElement;
+function pick(e){const r=el.getBoundingClientRect(); ndc.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(ndc,camera); const h=ray.intersectObjects(hits)[0]; return h?h.object.userData:null;}
+el.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY];});
+el.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>6){down=null;return;} down=null;
+  const u=pick(e); if(u){stopRoute(); select(u.id,true); if(u.sub!==undefined) openSub(u.sub);}});
+el.addEventListener('pointermove',e=>{if(e.pointerType==='mouse') el.style.cursor=pick(e)?'pointer':'grab';});
+
+/* sizing */
+const panel=document.querySelector('aside.panel');
+function resize(){
+  const w=window.innerWidth,h=window.innerHeight; renderer.setSize(w,h); camera.aspect=w/h;
+  const pr=panel.getBoundingClientRect();
+  if(w<=760) camera.setViewOffset(w,h,0,Math.round(pr.height*.42),w,h);
+  else camera.setViewOffset(w,h,Math.round((pr.width+16)/2),0,w,h);
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',resize);
+
+/* loop */
+const v=new THREE.Vector3(),clock=new THREE.Clock(); let lastT=0;
+function tick(){
+  const t=clock.getElapsedTime(),now=performance.now(), dt=Math.min(.05,t-lastT); lastT=t;
+  if(showBelievers&&!reduce){
+    updateBelievers(dt,t);
+    believers.forEach(b=>{
+      if(b.phase!=='pray'){ b.bubble.classList.add('off'); return; }
+      b.anchor.copy(b.g.position); b.anchor.y+=b.H*.95; v.copy(b.anchor).project(camera);
+      if(v.z>1||v.z<-1){ b.bubble.classList.add('off'); return; }
+      b.bubble.classList.remove('off');
+      b.bubble.style.transform='translate('+((v.x*.5+.5)*window.innerWidth).toFixed(1)+'px,'+((-v.y*.5+.5)*window.innerHeight).toFixed(1)+'px) translate(-50%,-100%)';
+    });
+  }
+  if(fly){const k=Math.min(1,(now-fly.t0)/fly.dur),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+    controls.target.lerpVectors(fly.fT,fly.tT,e); camera.position.lerpVectors(fly.fP,fly.tP,e); if(k>=1) fly=null;}
+  controls.update();
+  if(!reduce){
+    const p=water.geometry.attributes.position;
+    for(let i=0;i<p.count;i++){const x=wBase[i*3],z=wBase[i*3+2]; p.array[i*3+1]=Math.sin(x*.32+t*.9)*.11+Math.cos(z*.27+t*.7)*.09;}
+    p.needsUpdate=true; water.geometry.computeVertexNormals();
+    flags.forEach(f=>{f.userData.flag.rotation.y=Math.sin(t*2.2+f.userData.seed)*.35;});
+    smoke.forEach(s=>{const k=(t*.12+s.userData.phase)%1; s.position.set(Math.sin(k*9+s.userData.phase*6)*.18*k,GROUND+.8+k*3.2,4.25);
+      const sc=.35+k*1.3; s.scale.set(sc,sc,1); s.material.opacity=.32*Math.sin(Math.PI*k);});
+  }
+  D.forEach(d=>{
+    const m=markers[d.id],sel=d.id===current;
+    let hopY=0, sq=1;
+    if(!reduce){
+      const bob=Math.sin(t*1.8+m.seed)*.025; hopY=bob;
+      if(m.hop){const k=(now-m.hop)/650; if(k<1){hopY+=Math.sin(Math.PI*k)*.35; sq=1+Math.sin(Math.PI*k)*.06;} else m.hop=0;}
+    }
+    m.spr.position.y=m.foot+Math.max(0,hopY); m.spr.scale.set(m.W/sq,m.H*sq,1);
+    const lamp=m.ly+(reduce?0:Math.sin(t*1.6+m.seed)*.05)+Math.max(0,hopY);
+    m.lamp.position.y=lamp; m.halo.position.y=lamp;
+    const pulse=sel&&!reduce?1+Math.sin(t*4)*.12:1, hs=m.r*7*(sel?1.35:1)*pulse; m.halo.scale.set(hs,hs,1);
+    m.anchor.copy(m.g.position); m.anchor.y+=lamp+m.r+.12;
+    v.copy(m.anchor).project(camera);
+    if(v.z>1||v.z<-1) m.tag.classList.add('off');
+    else{m.tag.classList.remove('off');
+      const x=(v.x*.5+.5)*window.innerWidth,y=(-v.y*.5+.5)*window.innerHeight;
+      m.tag.style.transform='translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px) translate(-50%,-100%)';}
+  });
+  const showSub=current==='basi';
+  subMinis.forEach(m=>{
+    let y=0, sq=1;
+    if(!reduce){ y=Math.max(0,Math.sin(t*2+m.seed)*.015); if(m.hop){const k=(now-m.hop)/600; if(k<1){y+=Math.sin(Math.PI*k)*.25; sq=1+Math.sin(Math.PI*k)*.06;} else m.hop=0;} }
+    m.spr.position.y=.1+y; m.spr.scale.set(m.H*.8/sq,m.H*sq,1);
+    if(!showSub){ m.tag.classList.add('off'); return; }
+    m.anchor.copy(m.g.position); m.anchor.y+=.1+y+m.H*.9;
+    v.copy(m.anchor).project(camera);
+    if(v.z>1||v.z<-1){ m.tag.classList.add('off'); return; }
+    m.tag.classList.remove('off');
+    const x=(v.x*.5+.5)*window.innerWidth, yy=(-v.y*.5+.5)*window.innerHeight;
+    m.tag.style.transform='translate('+x.toFixed(1)+'px,'+yy.toFixed(1)+'px) translate(-50%,-100%)';
+  });
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+resize(); applyFilter(); select('chenghuang',false); tick();
+})();
+</script>
+</body>
+</html>
